@@ -1,0 +1,3732 @@
+{
+ "Resources": {
+  "TopicsTableB8A0263C": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "id",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "id",
+      "KeyType": "HASH"
+     }
+    ],
+    "TableName": "Topics"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/TopicsTable/Resource"
+   }
+  },
+  "FeedbackTableF528636C": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "id",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "topic_id",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "GlobalSecondaryIndexes": [
+     {
+      "IndexName": "topic-index",
+      "KeySchema": [
+       {
+        "AttributeName": "topic_id",
+        "KeyType": "HASH"
+       }
+      ],
+      "Projection": {
+       "ProjectionType": "ALL"
+      }
+     }
+    ],
+    "KeySchema": [
+     {
+      "AttributeName": "id",
+      "KeyType": "HASH"
+     }
+    ],
+    "TableName": "Feedback"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackTable/Resource"
+   }
+  },
+  "TopicDeleteSNS3DEE032F": {
+   "Type": "AWS::SNS::Topic",
+   "Properties": {
+    "TopicName": "TopicDelete"
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/TopicDeleteSNS/Resource"
+   }
+  },
+  "FeedbackCreateSNSD9294F56": {
+   "Type": "AWS::SNS::Topic",
+   "Properties": {
+    "TopicName": "FeedbackCreate"
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackCreateSNS/Resource"
+   }
+  },
+  "FeedbackDeleteSNSDC68817A": {
+   "Type": "AWS::SNS::Topic",
+   "Properties": {
+    "TopicName": "FeedbackDelete"
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackDeleteSNS/Resource"
+   }
+  },
+  "SentimentAnalysisSNSF1670484": {
+   "Type": "AWS::SNS::Topic",
+   "Properties": {
+    "TopicName": "SentimentAnalysis"
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/SentimentAnalysisSNS/Resource"
+   }
+  },
+  "DeleteTopicFunctionServiceRoleC97355DA": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/DeleteTopicFunction/ServiceRole/Resource"
+   }
+  },
+  "DeleteTopicFunctionServiceRoleDefaultPolicy5D9ADE18": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable",
+        "dynamodb:GetItem",
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator",
+        "dynamodb:PutItem",
+        "dynamodb:Query",
+        "dynamodb:Scan",
+        "dynamodb:UpdateItem"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "TopicsTableB8A0263C",
+         "Arn"
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "DeleteTopicFunctionServiceRoleDefaultPolicy5D9ADE18",
+    "Roles": [
+     {
+      "Ref": "DeleteTopicFunctionServiceRoleC97355DA"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/DeleteTopicFunction/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "DeleteTopicFunctionE01ADB0D": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "a6c4c3796035c9ded7187babaca4217ffded07ec7c09fe6e7d751ec1dec6ef6a.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "TOPICS_TABLE": {
+       "Ref": "TopicsTableB8A0263C"
+      }
+     }
+    },
+    "Handler": "topic_handlers.delete_topic",
+    "Role": {
+     "Fn::GetAtt": [
+      "DeleteTopicFunctionServiceRoleC97355DA",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.11"
+   },
+   "DependsOn": [
+    "DeleteTopicFunctionServiceRoleDefaultPolicy5D9ADE18",
+    "DeleteTopicFunctionServiceRoleC97355DA"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/DeleteTopicFunction/Resource",
+    "aws:asset:path": "asset.a6c4c3796035c9ded7187babaca4217ffded07ec7c09fe6e7d751ec1dec6ef6a",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "DeleteTopicFunctionAllowInvokeFeedbackAppStackTopicDeleteSNS2EB13A79EE919CF9": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "DeleteTopicFunctionE01ADB0D",
+      "Arn"
+     ]
+    },
+    "Principal": "sns.amazonaws.com",
+    "SourceArn": {
+     "Ref": "TopicDeleteSNS3DEE032F"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/DeleteTopicFunction/AllowInvoke:FeedbackAppStackTopicDeleteSNS2EB13A79"
+   }
+  },
+  "DeleteTopicFunctionTopicDeleteSNSD412A0C6": {
+   "Type": "AWS::SNS::Subscription",
+   "Properties": {
+    "Endpoint": {
+     "Fn::GetAtt": [
+      "DeleteTopicFunctionE01ADB0D",
+      "Arn"
+     ]
+    },
+    "Protocol": "lambda",
+    "TopicArn": {
+     "Ref": "TopicDeleteSNS3DEE032F"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/DeleteTopicFunction/TopicDeleteSNS/Resource"
+   }
+  },
+  "GetTopicFunctionServiceRole8343395F": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/GetTopicFunction/ServiceRole/Resource"
+   }
+  },
+  "GetTopicFunctionServiceRoleDefaultPolicy77956384": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:DescribeTable",
+        "dynamodb:GetItem",
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator",
+        "dynamodb:Query",
+        "dynamodb:Scan"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "TopicsTableB8A0263C",
+         "Arn"
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "GetTopicFunctionServiceRoleDefaultPolicy77956384",
+    "Roles": [
+     {
+      "Ref": "GetTopicFunctionServiceRole8343395F"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/GetTopicFunction/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "GetTopicFunctionEA7BBB40": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "a6c4c3796035c9ded7187babaca4217ffded07ec7c09fe6e7d751ec1dec6ef6a.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "TOPICS_TABLE": {
+       "Ref": "TopicsTableB8A0263C"
+      }
+     }
+    },
+    "Handler": "direct_handlers.get_topic",
+    "Role": {
+     "Fn::GetAtt": [
+      "GetTopicFunctionServiceRole8343395F",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.11"
+   },
+   "DependsOn": [
+    "GetTopicFunctionServiceRoleDefaultPolicy77956384",
+    "GetTopicFunctionServiceRole8343395F"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/GetTopicFunction/Resource",
+    "aws:asset:path": "asset.a6c4c3796035c9ded7187babaca4217ffded07ec7c09fe6e7d751ec1dec6ef6a",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "ListTopicsFunctionServiceRoleD72AB45A": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/ListTopicsFunction/ServiceRole/Resource"
+   }
+  },
+  "ListTopicsFunctionServiceRoleDefaultPolicy0E603561": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:DescribeTable",
+        "dynamodb:GetItem",
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator",
+        "dynamodb:Query",
+        "dynamodb:Scan"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "TopicsTableB8A0263C",
+         "Arn"
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "ListTopicsFunctionServiceRoleDefaultPolicy0E603561",
+    "Roles": [
+     {
+      "Ref": "ListTopicsFunctionServiceRoleD72AB45A"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/ListTopicsFunction/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "ListTopicsFunctionC2262C9B": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "a6c4c3796035c9ded7187babaca4217ffded07ec7c09fe6e7d751ec1dec6ef6a.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "TOPICS_TABLE": {
+       "Ref": "TopicsTableB8A0263C"
+      }
+     }
+    },
+    "Handler": "direct_handlers.list_topics",
+    "Role": {
+     "Fn::GetAtt": [
+      "ListTopicsFunctionServiceRoleD72AB45A",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.11"
+   },
+   "DependsOn": [
+    "ListTopicsFunctionServiceRoleDefaultPolicy0E603561",
+    "ListTopicsFunctionServiceRoleD72AB45A"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/ListTopicsFunction/Resource",
+    "aws:asset:path": "asset.a6c4c3796035c9ded7187babaca4217ffded07ec7c09fe6e7d751ec1dec6ef6a",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "CreateFeedbackFunctionServiceRoleB46A2C8F": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/CreateFeedbackFunction/ServiceRole/Resource"
+   }
+  },
+  "CreateFeedbackFunctionServiceRoleDefaultPolicy730442F8": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable",
+        "dynamodb:GetItem",
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator",
+        "dynamodb:PutItem",
+        "dynamodb:Query",
+        "dynamodb:Scan",
+        "dynamodb:UpdateItem"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "FeedbackTableF528636C",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "FeedbackTableF528636C",
+             "Arn"
+            ]
+           },
+           "/index/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:DescribeTable",
+        "dynamodb:GetItem",
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator",
+        "dynamodb:Query",
+        "dynamodb:Scan"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "TopicsTableB8A0263C",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": "sns:Publish",
+       "Effect": "Allow",
+       "Resource": {
+        "Ref": "SentimentAnalysisSNSF1670484"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "CreateFeedbackFunctionServiceRoleDefaultPolicy730442F8",
+    "Roles": [
+     {
+      "Ref": "CreateFeedbackFunctionServiceRoleB46A2C8F"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/CreateFeedbackFunction/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "CreateFeedbackFunction4D35FDCF": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "a6c4c3796035c9ded7187babaca4217ffded07ec7c09fe6e7d751ec1dec6ef6a.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "FEEDBACK_TABLE": {
+       "Ref": "FeedbackTableF528636C"
+      },
+      "TOPICS_TABLE": {
+       "Ref": "TopicsTableB8A0263C"
+      },
+      "SENTIMENT_ANALYSIS_SNS_ARN": {
+       "Ref": "SentimentAnalysisSNSF1670484"
+      }
+     }
+    },
+    "Handler": "feedback_handlers.create_feedback",
+    "Role": {
+     "Fn::GetAtt": [
+      "CreateFeedbackFunctionServiceRoleB46A2C8F",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.11"
+   },
+   "DependsOn": [
+    "CreateFeedbackFunctionServiceRoleDefaultPolicy730442F8",
+    "CreateFeedbackFunctionServiceRoleB46A2C8F"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/CreateFeedbackFunction/Resource",
+    "aws:asset:path": "asset.a6c4c3796035c9ded7187babaca4217ffded07ec7c09fe6e7d751ec1dec6ef6a",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "CreateFeedbackFunctionAllowInvokeFeedbackAppStackFeedbackCreateSNSE70F8EB14E9B33E6": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "CreateFeedbackFunction4D35FDCF",
+      "Arn"
+     ]
+    },
+    "Principal": "sns.amazonaws.com",
+    "SourceArn": {
+     "Ref": "FeedbackCreateSNSD9294F56"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/CreateFeedbackFunction/AllowInvoke:FeedbackAppStackFeedbackCreateSNSE70F8EB1"
+   }
+  },
+  "CreateFeedbackFunctionFeedbackCreateSNS1D5E6984": {
+   "Type": "AWS::SNS::Subscription",
+   "Properties": {
+    "Endpoint": {
+     "Fn::GetAtt": [
+      "CreateFeedbackFunction4D35FDCF",
+      "Arn"
+     ]
+    },
+    "Protocol": "lambda",
+    "TopicArn": {
+     "Ref": "FeedbackCreateSNSD9294F56"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/CreateFeedbackFunction/FeedbackCreateSNS/Resource"
+   }
+  },
+  "DeleteFeedbackFunctionServiceRoleB52B0BC5": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/DeleteFeedbackFunction/ServiceRole/Resource"
+   }
+  },
+  "DeleteFeedbackFunctionServiceRoleDefaultPolicy3938A44A": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable",
+        "dynamodb:GetItem",
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator",
+        "dynamodb:PutItem",
+        "dynamodb:Query",
+        "dynamodb:Scan",
+        "dynamodb:UpdateItem"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "FeedbackTableF528636C",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "FeedbackTableF528636C",
+             "Arn"
+            ]
+           },
+           "/index/*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "DeleteFeedbackFunctionServiceRoleDefaultPolicy3938A44A",
+    "Roles": [
+     {
+      "Ref": "DeleteFeedbackFunctionServiceRoleB52B0BC5"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/DeleteFeedbackFunction/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "DeleteFeedbackFunction12311AD0": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "a6c4c3796035c9ded7187babaca4217ffded07ec7c09fe6e7d751ec1dec6ef6a.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "FEEDBACK_TABLE": {
+       "Ref": "FeedbackTableF528636C"
+      }
+     }
+    },
+    "Handler": "feedback_handlers.delete_feedback",
+    "Role": {
+     "Fn::GetAtt": [
+      "DeleteFeedbackFunctionServiceRoleB52B0BC5",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.11"
+   },
+   "DependsOn": [
+    "DeleteFeedbackFunctionServiceRoleDefaultPolicy3938A44A",
+    "DeleteFeedbackFunctionServiceRoleB52B0BC5"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/DeleteFeedbackFunction/Resource",
+    "aws:asset:path": "asset.a6c4c3796035c9ded7187babaca4217ffded07ec7c09fe6e7d751ec1dec6ef6a",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "DeleteFeedbackFunctionAllowInvokeFeedbackAppStackFeedbackDeleteSNSABC25FFEF64BD0DF": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "DeleteFeedbackFunction12311AD0",
+      "Arn"
+     ]
+    },
+    "Principal": "sns.amazonaws.com",
+    "SourceArn": {
+     "Ref": "FeedbackDeleteSNSDC68817A"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/DeleteFeedbackFunction/AllowInvoke:FeedbackAppStackFeedbackDeleteSNSABC25FFE"
+   }
+  },
+  "DeleteFeedbackFunctionFeedbackDeleteSNS326E7BF4": {
+   "Type": "AWS::SNS::Subscription",
+   "Properties": {
+    "Endpoint": {
+     "Fn::GetAtt": [
+      "DeleteFeedbackFunction12311AD0",
+      "Arn"
+     ]
+    },
+    "Protocol": "lambda",
+    "TopicArn": {
+     "Ref": "FeedbackDeleteSNSDC68817A"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/DeleteFeedbackFunction/FeedbackDeleteSNS/Resource"
+   }
+  },
+  "GetFeedbackFunctionServiceRole3A89E4F1": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/GetFeedbackFunction/ServiceRole/Resource"
+   }
+  },
+  "GetFeedbackFunctionServiceRoleDefaultPolicy387EF9DF": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:DescribeTable",
+        "dynamodb:GetItem",
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator",
+        "dynamodb:Query",
+        "dynamodb:Scan"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "FeedbackTableF528636C",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "FeedbackTableF528636C",
+             "Arn"
+            ]
+           },
+           "/index/*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "GetFeedbackFunctionServiceRoleDefaultPolicy387EF9DF",
+    "Roles": [
+     {
+      "Ref": "GetFeedbackFunctionServiceRole3A89E4F1"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/GetFeedbackFunction/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "GetFeedbackFunction37EA7D15": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "a6c4c3796035c9ded7187babaca4217ffded07ec7c09fe6e7d751ec1dec6ef6a.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "FEEDBACK_TABLE": {
+       "Ref": "FeedbackTableF528636C"
+      }
+     }
+    },
+    "Handler": "direct_handlers.get_feedback",
+    "Role": {
+     "Fn::GetAtt": [
+      "GetFeedbackFunctionServiceRole3A89E4F1",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.11"
+   },
+   "DependsOn": [
+    "GetFeedbackFunctionServiceRoleDefaultPolicy387EF9DF",
+    "GetFeedbackFunctionServiceRole3A89E4F1"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/GetFeedbackFunction/Resource",
+    "aws:asset:path": "asset.a6c4c3796035c9ded7187babaca4217ffded07ec7c09fe6e7d751ec1dec6ef6a",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "ListFeedbackByTopicFunctionServiceRoleDD7FF040": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/ListFeedbackByTopicFunction/ServiceRole/Resource"
+   }
+  },
+  "ListFeedbackByTopicFunctionServiceRoleDefaultPolicy897187E8": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:DescribeTable",
+        "dynamodb:GetItem",
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator",
+        "dynamodb:Query",
+        "dynamodb:Scan"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "FeedbackTableF528636C",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "TopicsTableB8A0263C",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "FeedbackTableF528636C",
+             "Arn"
+            ]
+           },
+           "/index/*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "ListFeedbackByTopicFunctionServiceRoleDefaultPolicy897187E8",
+    "Roles": [
+     {
+      "Ref": "ListFeedbackByTopicFunctionServiceRoleDD7FF040"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/ListFeedbackByTopicFunction/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "ListFeedbackByTopicFunctionACFCF991": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "a6c4c3796035c9ded7187babaca4217ffded07ec7c09fe6e7d751ec1dec6ef6a.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "FEEDBACK_TABLE": {
+       "Ref": "FeedbackTableF528636C"
+      },
+      "TOPICS_TABLE": {
+       "Ref": "TopicsTableB8A0263C"
+      }
+     }
+    },
+    "Handler": "direct_handlers.list_feedback_by_topic",
+    "Role": {
+     "Fn::GetAtt": [
+      "ListFeedbackByTopicFunctionServiceRoleDD7FF040",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.11"
+   },
+   "DependsOn": [
+    "ListFeedbackByTopicFunctionServiceRoleDefaultPolicy897187E8",
+    "ListFeedbackByTopicFunctionServiceRoleDD7FF040"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/ListFeedbackByTopicFunction/Resource",
+    "aws:asset:path": "asset.a6c4c3796035c9ded7187babaca4217ffded07ec7c09fe6e7d751ec1dec6ef6a",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "AnalyzeSentimentFunctionServiceRoleAC95AB94": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/AnalyzeSentimentFunction/ServiceRole/Resource"
+   }
+  },
+  "AnalyzeSentimentFunctionServiceRoleDefaultPolicy4475B859": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable",
+        "dynamodb:GetItem",
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator",
+        "dynamodb:PutItem",
+        "dynamodb:Query",
+        "dynamodb:Scan",
+        "dynamodb:UpdateItem"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "FeedbackTableF528636C",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "FeedbackTableF528636C",
+             "Arn"
+            ]
+           },
+           "/index/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "comprehend:BatchDetectSentiment",
+        "comprehend:DetectSentiment"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "AnalyzeSentimentFunctionServiceRoleDefaultPolicy4475B859",
+    "Roles": [
+     {
+      "Ref": "AnalyzeSentimentFunctionServiceRoleAC95AB94"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/AnalyzeSentimentFunction/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "AnalyzeSentimentFunctionD2BFCE2C": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "a6c4c3796035c9ded7187babaca4217ffded07ec7c09fe6e7d751ec1dec6ef6a.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "FEEDBACK_TABLE": {
+       "Ref": "FeedbackTableF528636C"
+      }
+     }
+    },
+    "Handler": "sentiment_handlers.analyze_feedback_sentiment",
+    "Role": {
+     "Fn::GetAtt": [
+      "AnalyzeSentimentFunctionServiceRoleAC95AB94",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.11"
+   },
+   "DependsOn": [
+    "AnalyzeSentimentFunctionServiceRoleDefaultPolicy4475B859",
+    "AnalyzeSentimentFunctionServiceRoleAC95AB94"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/AnalyzeSentimentFunction/Resource",
+    "aws:asset:path": "asset.a6c4c3796035c9ded7187babaca4217ffded07ec7c09fe6e7d751ec1dec6ef6a",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "AnalyzeSentimentFunctionAllowInvokeFeedbackAppStackSentimentAnalysisSNSB82F4143FB35478D": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "AnalyzeSentimentFunctionD2BFCE2C",
+      "Arn"
+     ]
+    },
+    "Principal": "sns.amazonaws.com",
+    "SourceArn": {
+     "Ref": "SentimentAnalysisSNSF1670484"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/AnalyzeSentimentFunction/AllowInvoke:FeedbackAppStackSentimentAnalysisSNSB82F4143"
+   }
+  },
+  "AnalyzeSentimentFunctionSentimentAnalysisSNS2ECD3570": {
+   "Type": "AWS::SNS::Subscription",
+   "Properties": {
+    "Endpoint": {
+     "Fn::GetAtt": [
+      "AnalyzeSentimentFunctionD2BFCE2C",
+      "Arn"
+     ]
+    },
+    "Protocol": "lambda",
+    "TopicArn": {
+     "Ref": "SentimentAnalysisSNSF1670484"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/AnalyzeSentimentFunction/SentimentAnalysisSNS/Resource"
+   }
+  },
+  "GetSentimentHistoryFunctionServiceRole6BFFB8CF": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/GetSentimentHistoryFunction/ServiceRole/Resource"
+   }
+  },
+  "GetSentimentHistoryFunctionServiceRoleDefaultPolicyCCE05CB6": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:DescribeTable",
+        "dynamodb:GetItem",
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator",
+        "dynamodb:Query",
+        "dynamodb:Scan"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "FeedbackTableF528636C",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "TopicsTableB8A0263C",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "FeedbackTableF528636C",
+             "Arn"
+            ]
+           },
+           "/index/*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "GetSentimentHistoryFunctionServiceRoleDefaultPolicyCCE05CB6",
+    "Roles": [
+     {
+      "Ref": "GetSentimentHistoryFunctionServiceRole6BFFB8CF"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/GetSentimentHistoryFunction/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "GetSentimentHistoryFunction2926CBA3": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "a6c4c3796035c9ded7187babaca4217ffded07ec7c09fe6e7d751ec1dec6ef6a.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "FEEDBACK_TABLE": {
+       "Ref": "FeedbackTableF528636C"
+      },
+      "TOPICS_TABLE": {
+       "Ref": "TopicsTableB8A0263C"
+      }
+     }
+    },
+    "Handler": "direct_handlers.get_sentiment_history",
+    "Role": {
+     "Fn::GetAtt": [
+      "GetSentimentHistoryFunctionServiceRole6BFFB8CF",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.11"
+   },
+   "DependsOn": [
+    "GetSentimentHistoryFunctionServiceRoleDefaultPolicyCCE05CB6",
+    "GetSentimentHistoryFunctionServiceRole6BFFB8CF"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/GetSentimentHistoryFunction/Resource",
+    "aws:asset:path": "asset.a6c4c3796035c9ded7187babaca4217ffded07ec7c09fe6e7d751ec1dec6ef6a",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "ValidateCreateTopicFunctionServiceRole7190F782": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/ValidateCreateTopicFunction/ServiceRole/Resource"
+   }
+  },
+  "ValidateCreateTopicFunctionServiceRoleDefaultPolicy461BBC26": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:BatchWriteItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "TopicsTableB8A0263C",
+         "Arn"
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "ValidateCreateTopicFunctionServiceRoleDefaultPolicy461BBC26",
+    "Roles": [
+     {
+      "Ref": "ValidateCreateTopicFunctionServiceRole7190F782"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/ValidateCreateTopicFunction/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "ValidateCreateTopicFunction7E8390E9": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "a6c4c3796035c9ded7187babaca4217ffded07ec7c09fe6e7d751ec1dec6ef6a.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "TOPICS_TABLE": {
+       "Ref": "TopicsTableB8A0263C"
+      }
+     }
+    },
+    "Handler": "validation_handlers.validate_create_topic",
+    "Role": {
+     "Fn::GetAtt": [
+      "ValidateCreateTopicFunctionServiceRole7190F782",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.11"
+   },
+   "DependsOn": [
+    "ValidateCreateTopicFunctionServiceRoleDefaultPolicy461BBC26",
+    "ValidateCreateTopicFunctionServiceRole7190F782"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/ValidateCreateTopicFunction/Resource",
+    "aws:asset:path": "asset.a6c4c3796035c9ded7187babaca4217ffded07ec7c09fe6e7d751ec1dec6ef6a",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "ValidateDeleteTopicFunctionServiceRole4881BCF6": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/ValidateDeleteTopicFunction/ServiceRole/Resource"
+   }
+  },
+  "ValidateDeleteTopicFunctionServiceRoleDefaultPolicyC7567172": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sns:Publish",
+       "Effect": "Allow",
+       "Resource": {
+        "Ref": "TopicDeleteSNS3DEE032F"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "ValidateDeleteTopicFunctionServiceRoleDefaultPolicyC7567172",
+    "Roles": [
+     {
+      "Ref": "ValidateDeleteTopicFunctionServiceRole4881BCF6"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/ValidateDeleteTopicFunction/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "ValidateDeleteTopicFunctionD67C5419": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "a6c4c3796035c9ded7187babaca4217ffded07ec7c09fe6e7d751ec1dec6ef6a.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "TOPIC_DELETE_SNS_ARN": {
+       "Ref": "TopicDeleteSNS3DEE032F"
+      }
+     }
+    },
+    "Handler": "validation_handlers.validate_delete_topic",
+    "Role": {
+     "Fn::GetAtt": [
+      "ValidateDeleteTopicFunctionServiceRole4881BCF6",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.11"
+   },
+   "DependsOn": [
+    "ValidateDeleteTopicFunctionServiceRoleDefaultPolicyC7567172",
+    "ValidateDeleteTopicFunctionServiceRole4881BCF6"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/ValidateDeleteTopicFunction/Resource",
+    "aws:asset:path": "asset.a6c4c3796035c9ded7187babaca4217ffded07ec7c09fe6e7d751ec1dec6ef6a",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "ValidateCreateFeedbackFunctionServiceRole582CAE88": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/ValidateCreateFeedbackFunction/ServiceRole/Resource"
+   }
+  },
+  "ValidateCreateFeedbackFunctionServiceRoleDefaultPolicy1E89C77B": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sns:Publish",
+       "Effect": "Allow",
+       "Resource": {
+        "Ref": "FeedbackCreateSNSD9294F56"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "ValidateCreateFeedbackFunctionServiceRoleDefaultPolicy1E89C77B",
+    "Roles": [
+     {
+      "Ref": "ValidateCreateFeedbackFunctionServiceRole582CAE88"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/ValidateCreateFeedbackFunction/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "ValidateCreateFeedbackFunctionBC7D1A81": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "a6c4c3796035c9ded7187babaca4217ffded07ec7c09fe6e7d751ec1dec6ef6a.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "FEEDBACK_CREATE_SNS_ARN": {
+       "Ref": "FeedbackCreateSNSD9294F56"
+      }
+     }
+    },
+    "Handler": "validation_handlers.validate_create_feedback",
+    "Role": {
+     "Fn::GetAtt": [
+      "ValidateCreateFeedbackFunctionServiceRole582CAE88",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.11"
+   },
+   "DependsOn": [
+    "ValidateCreateFeedbackFunctionServiceRoleDefaultPolicy1E89C77B",
+    "ValidateCreateFeedbackFunctionServiceRole582CAE88"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/ValidateCreateFeedbackFunction/Resource",
+    "aws:asset:path": "asset.a6c4c3796035c9ded7187babaca4217ffded07ec7c09fe6e7d751ec1dec6ef6a",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "ValidateDeleteFeedbackFunctionServiceRole65B1CC5D": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/ValidateDeleteFeedbackFunction/ServiceRole/Resource"
+   }
+  },
+  "ValidateDeleteFeedbackFunctionServiceRoleDefaultPolicyD3F6D8B3": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sns:Publish",
+       "Effect": "Allow",
+       "Resource": {
+        "Ref": "FeedbackDeleteSNSDC68817A"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "ValidateDeleteFeedbackFunctionServiceRoleDefaultPolicyD3F6D8B3",
+    "Roles": [
+     {
+      "Ref": "ValidateDeleteFeedbackFunctionServiceRole65B1CC5D"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/ValidateDeleteFeedbackFunction/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "ValidateDeleteFeedbackFunctionB2B24C37": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "a6c4c3796035c9ded7187babaca4217ffded07ec7c09fe6e7d751ec1dec6ef6a.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "FEEDBACK_DELETE_SNS_ARN": {
+       "Ref": "FeedbackDeleteSNSDC68817A"
+      }
+     }
+    },
+    "Handler": "validation_handlers.validate_delete_feedback",
+    "Role": {
+     "Fn::GetAtt": [
+      "ValidateDeleteFeedbackFunctionServiceRole65B1CC5D",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.11"
+   },
+   "DependsOn": [
+    "ValidateDeleteFeedbackFunctionServiceRoleDefaultPolicyD3F6D8B3",
+    "ValidateDeleteFeedbackFunctionServiceRole65B1CC5D"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/ValidateDeleteFeedbackFunction/Resource",
+    "aws:asset:path": "asset.a6c4c3796035c9ded7187babaca4217ffded07ec7c09fe6e7d751ec1dec6ef6a",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "FeedbackApi4ED3D87F": {
+   "Type": "AWS::ApiGateway::RestApi",
+   "Properties": {
+    "Description": "API for managing topics and feedback with validation layer",
+    "Name": "Feedback Service"
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Resource"
+   }
+  },
+  "FeedbackApiDeploymentA85896F67ed2ae4c503888b8089f9408f95f1303": {
+   "Type": "AWS::ApiGateway::Deployment",
+   "Properties": {
+    "Description": "API for managing topics and feedback with validation layer",
+    "RestApiId": {
+     "Ref": "FeedbackApi4ED3D87F"
+    }
+   },
+   "DependsOn": [
+    "FeedbackApifeedbackidDELETEC5787B4A",
+    "FeedbackApifeedbackidGET28CEA3B0",
+    "FeedbackApifeedbackidOPTIONS739E7B3A",
+    "FeedbackApifeedbackidCA4CEC20",
+    "FeedbackApifeedbackOPTIONSA8EB509E",
+    "FeedbackApifeedbackPOST1A06052D",
+    "FeedbackApifeedback47EB76F2",
+    "FeedbackApiOPTIONSDA8D8FF7",
+    "FeedbackApitopicsidDELETE6207EB50",
+    "FeedbackApitopicsidfeedbackGET918FC9C3",
+    "FeedbackApitopicsidfeedbackOPTIONS7381CB5B",
+    "FeedbackApitopicsidfeedback158C710E",
+    "FeedbackApitopicsidGET6EC9EA45",
+    "FeedbackApitopicsidOPTIONS709DBE64",
+    "FeedbackApitopicsid7A1A74CE",
+    "FeedbackApitopicsidsentimentGET51FDECC6",
+    "FeedbackApitopicsidsentimentOPTIONS1D5A3A3A",
+    "FeedbackApitopicsidsentiment3B22EB86",
+    "FeedbackApitopicsGET7F688344",
+    "FeedbackApitopicsOPTIONSD7CE4B53",
+    "FeedbackApitopicsPOSTD24CA0F5",
+    "FeedbackApitopicsEB82C66D"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Deployment/Resource",
+    "aws:cdk:do-not-refactor": true
+   }
+  },
+  "FeedbackApiDeploymentStageprod1EBA903B": {
+   "Type": "AWS::ApiGateway::Stage",
+   "Properties": {
+    "DeploymentId": {
+     "Ref": "FeedbackApiDeploymentA85896F67ed2ae4c503888b8089f9408f95f1303"
+    },
+    "RestApiId": {
+     "Ref": "FeedbackApi4ED3D87F"
+    },
+    "StageName": "prod"
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/DeploymentStage.prod/Resource"
+   }
+  },
+  "FeedbackApiOPTIONSDA8D8FF7": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "ApiKeyRequired": false,
+    "AuthorizationType": "NONE",
+    "HttpMethod": "OPTIONS",
+    "Integration": {
+     "IntegrationResponses": [
+      {
+       "ResponseParameters": {
+        "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'",
+        "method.response.header.Access-Control-Allow-Origin": "'*'",
+        "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'"
+       },
+       "StatusCode": "204"
+      }
+     ],
+     "RequestTemplates": {
+      "application/json": "{ statusCode: 200 }"
+     },
+     "Type": "MOCK"
+    },
+    "MethodResponses": [
+     {
+      "ResponseParameters": {
+       "method.response.header.Access-Control-Allow-Headers": true,
+       "method.response.header.Access-Control-Allow-Origin": true,
+       "method.response.header.Access-Control-Allow-Methods": true
+      },
+      "StatusCode": "204"
+     }
+    ],
+    "ResourceId": {
+     "Fn::GetAtt": [
+      "FeedbackApi4ED3D87F",
+      "RootResourceId"
+     ]
+    },
+    "RestApiId": {
+     "Ref": "FeedbackApi4ED3D87F"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/OPTIONS/Resource"
+   }
+  },
+  "FeedbackApitopicsEB82C66D": {
+   "Type": "AWS::ApiGateway::Resource",
+   "Properties": {
+    "ParentId": {
+     "Fn::GetAtt": [
+      "FeedbackApi4ED3D87F",
+      "RootResourceId"
+     ]
+    },
+    "PathPart": "topics",
+    "RestApiId": {
+     "Ref": "FeedbackApi4ED3D87F"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/topics/Resource"
+   }
+  },
+  "FeedbackApitopicsOPTIONSD7CE4B53": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "ApiKeyRequired": false,
+    "AuthorizationType": "NONE",
+    "HttpMethod": "OPTIONS",
+    "Integration": {
+     "IntegrationResponses": [
+      {
+       "ResponseParameters": {
+        "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'",
+        "method.response.header.Access-Control-Allow-Origin": "'*'",
+        "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'"
+       },
+       "StatusCode": "204"
+      }
+     ],
+     "RequestTemplates": {
+      "application/json": "{ statusCode: 200 }"
+     },
+     "Type": "MOCK"
+    },
+    "MethodResponses": [
+     {
+      "ResponseParameters": {
+       "method.response.header.Access-Control-Allow-Headers": true,
+       "method.response.header.Access-Control-Allow-Origin": true,
+       "method.response.header.Access-Control-Allow-Methods": true
+      },
+      "StatusCode": "204"
+     }
+    ],
+    "ResourceId": {
+     "Ref": "FeedbackApitopicsEB82C66D"
+    },
+    "RestApiId": {
+     "Ref": "FeedbackApi4ED3D87F"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/topics/OPTIONS/Resource"
+   }
+  },
+  "FeedbackApitopicsPOSTApiPermissionFeedbackAppStackFeedbackApiD7C6D35EPOSTtopics856112B4": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "ValidateCreateTopicFunction7E8390E9",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "FeedbackApi4ED3D87F"
+       },
+       "/",
+       {
+        "Ref": "FeedbackApiDeploymentStageprod1EBA903B"
+       },
+       "/POST/topics"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/topics/POST/ApiPermission.FeedbackAppStackFeedbackApiD7C6D35E.POST..topics"
+   }
+  },
+  "FeedbackApitopicsPOSTApiPermissionTestFeedbackAppStackFeedbackApiD7C6D35EPOSTtopicsBF9D4B7A": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "ValidateCreateTopicFunction7E8390E9",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "FeedbackApi4ED3D87F"
+       },
+       "/test-invoke-stage/POST/topics"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/topics/POST/ApiPermission.Test.FeedbackAppStackFeedbackApiD7C6D35E.POST..topics"
+   }
+  },
+  "FeedbackApitopicsPOSTD24CA0F5": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "AuthorizationType": "NONE",
+    "HttpMethod": "POST",
+    "Integration": {
+     "IntegrationHttpMethod": "POST",
+     "Type": "AWS_PROXY",
+     "Uri": {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":apigateway:",
+        {
+         "Ref": "AWS::Region"
+        },
+        ":lambda:path/2015-03-31/functions/",
+        {
+         "Fn::GetAtt": [
+          "ValidateCreateTopicFunction7E8390E9",
+          "Arn"
+         ]
+        },
+        "/invocations"
+       ]
+      ]
+     }
+    },
+    "ResourceId": {
+     "Ref": "FeedbackApitopicsEB82C66D"
+    },
+    "RestApiId": {
+     "Ref": "FeedbackApi4ED3D87F"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/topics/POST/Resource"
+   }
+  },
+  "FeedbackApitopicsGETApiPermissionFeedbackAppStackFeedbackApiD7C6D35EGETtopics0DA552AB": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "ListTopicsFunctionC2262C9B",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "FeedbackApi4ED3D87F"
+       },
+       "/",
+       {
+        "Ref": "FeedbackApiDeploymentStageprod1EBA903B"
+       },
+       "/GET/topics"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/topics/GET/ApiPermission.FeedbackAppStackFeedbackApiD7C6D35E.GET..topics"
+   }
+  },
+  "FeedbackApitopicsGETApiPermissionTestFeedbackAppStackFeedbackApiD7C6D35EGETtopics8C947E3B": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "ListTopicsFunctionC2262C9B",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "FeedbackApi4ED3D87F"
+       },
+       "/test-invoke-stage/GET/topics"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/topics/GET/ApiPermission.Test.FeedbackAppStackFeedbackApiD7C6D35E.GET..topics"
+   }
+  },
+  "FeedbackApitopicsGET7F688344": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "AuthorizationType": "NONE",
+    "HttpMethod": "GET",
+    "Integration": {
+     "IntegrationHttpMethod": "POST",
+     "Type": "AWS_PROXY",
+     "Uri": {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":apigateway:",
+        {
+         "Ref": "AWS::Region"
+        },
+        ":lambda:path/2015-03-31/functions/",
+        {
+         "Fn::GetAtt": [
+          "ListTopicsFunctionC2262C9B",
+          "Arn"
+         ]
+        },
+        "/invocations"
+       ]
+      ]
+     }
+    },
+    "ResourceId": {
+     "Ref": "FeedbackApitopicsEB82C66D"
+    },
+    "RestApiId": {
+     "Ref": "FeedbackApi4ED3D87F"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/topics/GET/Resource"
+   }
+  },
+  "FeedbackApitopicsid7A1A74CE": {
+   "Type": "AWS::ApiGateway::Resource",
+   "Properties": {
+    "ParentId": {
+     "Ref": "FeedbackApitopicsEB82C66D"
+    },
+    "PathPart": "{id}",
+    "RestApiId": {
+     "Ref": "FeedbackApi4ED3D87F"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/topics/{id}/Resource"
+   }
+  },
+  "FeedbackApitopicsidOPTIONS709DBE64": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "ApiKeyRequired": false,
+    "AuthorizationType": "NONE",
+    "HttpMethod": "OPTIONS",
+    "Integration": {
+     "IntegrationResponses": [
+      {
+       "ResponseParameters": {
+        "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'",
+        "method.response.header.Access-Control-Allow-Origin": "'*'",
+        "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'"
+       },
+       "StatusCode": "204"
+      }
+     ],
+     "RequestTemplates": {
+      "application/json": "{ statusCode: 200 }"
+     },
+     "Type": "MOCK"
+    },
+    "MethodResponses": [
+     {
+      "ResponseParameters": {
+       "method.response.header.Access-Control-Allow-Headers": true,
+       "method.response.header.Access-Control-Allow-Origin": true,
+       "method.response.header.Access-Control-Allow-Methods": true
+      },
+      "StatusCode": "204"
+     }
+    ],
+    "ResourceId": {
+     "Ref": "FeedbackApitopicsid7A1A74CE"
+    },
+    "RestApiId": {
+     "Ref": "FeedbackApi4ED3D87F"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/topics/{id}/OPTIONS/Resource"
+   }
+  },
+  "FeedbackApitopicsidGETApiPermissionFeedbackAppStackFeedbackApiD7C6D35EGETtopicsidC39B0C37": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "GetTopicFunctionEA7BBB40",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "FeedbackApi4ED3D87F"
+       },
+       "/",
+       {
+        "Ref": "FeedbackApiDeploymentStageprod1EBA903B"
+       },
+       "/GET/topics/*"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/topics/{id}/GET/ApiPermission.FeedbackAppStackFeedbackApiD7C6D35E.GET..topics.{id}"
+   }
+  },
+  "FeedbackApitopicsidGETApiPermissionTestFeedbackAppStackFeedbackApiD7C6D35EGETtopicsid9C8B5C2E": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "GetTopicFunctionEA7BBB40",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "FeedbackApi4ED3D87F"
+       },
+       "/test-invoke-stage/GET/topics/*"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/topics/{id}/GET/ApiPermission.Test.FeedbackAppStackFeedbackApiD7C6D35E.GET..topics.{id}"
+   }
+  },
+  "FeedbackApitopicsidGET6EC9EA45": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "AuthorizationType": "NONE",
+    "HttpMethod": "GET",
+    "Integration": {
+     "IntegrationHttpMethod": "POST",
+     "Type": "AWS_PROXY",
+     "Uri": {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":apigateway:",
+        {
+         "Ref": "AWS::Region"
+        },
+        ":lambda:path/2015-03-31/functions/",
+        {
+         "Fn::GetAtt": [
+          "GetTopicFunctionEA7BBB40",
+          "Arn"
+         ]
+        },
+        "/invocations"
+       ]
+      ]
+     }
+    },
+    "ResourceId": {
+     "Ref": "FeedbackApitopicsid7A1A74CE"
+    },
+    "RestApiId": {
+     "Ref": "FeedbackApi4ED3D87F"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/topics/{id}/GET/Resource"
+   }
+  },
+  "FeedbackApitopicsidDELETEApiPermissionFeedbackAppStackFeedbackApiD7C6D35EDELETEtopicsidA76EF44D": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "ValidateDeleteTopicFunctionD67C5419",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "FeedbackApi4ED3D87F"
+       },
+       "/",
+       {
+        "Ref": "FeedbackApiDeploymentStageprod1EBA903B"
+       },
+       "/DELETE/topics/*"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/topics/{id}/DELETE/ApiPermission.FeedbackAppStackFeedbackApiD7C6D35E.DELETE..topics.{id}"
+   }
+  },
+  "FeedbackApitopicsidDELETEApiPermissionTestFeedbackAppStackFeedbackApiD7C6D35EDELETEtopicsid9DD07378": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "ValidateDeleteTopicFunctionD67C5419",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "FeedbackApi4ED3D87F"
+       },
+       "/test-invoke-stage/DELETE/topics/*"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/topics/{id}/DELETE/ApiPermission.Test.FeedbackAppStackFeedbackApiD7C6D35E.DELETE..topics.{id}"
+   }
+  },
+  "FeedbackApitopicsidDELETE6207EB50": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "AuthorizationType": "NONE",
+    "HttpMethod": "DELETE",
+    "Integration": {
+     "IntegrationHttpMethod": "POST",
+     "Type": "AWS_PROXY",
+     "Uri": {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":apigateway:",
+        {
+         "Ref": "AWS::Region"
+        },
+        ":lambda:path/2015-03-31/functions/",
+        {
+         "Fn::GetAtt": [
+          "ValidateDeleteTopicFunctionD67C5419",
+          "Arn"
+         ]
+        },
+        "/invocations"
+       ]
+      ]
+     }
+    },
+    "ResourceId": {
+     "Ref": "FeedbackApitopicsid7A1A74CE"
+    },
+    "RestApiId": {
+     "Ref": "FeedbackApi4ED3D87F"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/topics/{id}/DELETE/Resource"
+   }
+  },
+  "FeedbackApitopicsidfeedback158C710E": {
+   "Type": "AWS::ApiGateway::Resource",
+   "Properties": {
+    "ParentId": {
+     "Ref": "FeedbackApitopicsid7A1A74CE"
+    },
+    "PathPart": "feedback",
+    "RestApiId": {
+     "Ref": "FeedbackApi4ED3D87F"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/topics/{id}/feedback/Resource"
+   }
+  },
+  "FeedbackApitopicsidfeedbackOPTIONS7381CB5B": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "ApiKeyRequired": false,
+    "AuthorizationType": "NONE",
+    "HttpMethod": "OPTIONS",
+    "Integration": {
+     "IntegrationResponses": [
+      {
+       "ResponseParameters": {
+        "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'",
+        "method.response.header.Access-Control-Allow-Origin": "'*'",
+        "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'"
+       },
+       "StatusCode": "204"
+      }
+     ],
+     "RequestTemplates": {
+      "application/json": "{ statusCode: 200 }"
+     },
+     "Type": "MOCK"
+    },
+    "MethodResponses": [
+     {
+      "ResponseParameters": {
+       "method.response.header.Access-Control-Allow-Headers": true,
+       "method.response.header.Access-Control-Allow-Origin": true,
+       "method.response.header.Access-Control-Allow-Methods": true
+      },
+      "StatusCode": "204"
+     }
+    ],
+    "ResourceId": {
+     "Ref": "FeedbackApitopicsidfeedback158C710E"
+    },
+    "RestApiId": {
+     "Ref": "FeedbackApi4ED3D87F"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/topics/{id}/feedback/OPTIONS/Resource"
+   }
+  },
+  "FeedbackApitopicsidfeedbackGETApiPermissionFeedbackAppStackFeedbackApiD7C6D35EGETtopicsidfeedbackCD3FA7D4": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "ListFeedbackByTopicFunctionACFCF991",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "FeedbackApi4ED3D87F"
+       },
+       "/",
+       {
+        "Ref": "FeedbackApiDeploymentStageprod1EBA903B"
+       },
+       "/GET/topics/*/feedback"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/topics/{id}/feedback/GET/ApiPermission.FeedbackAppStackFeedbackApiD7C6D35E.GET..topics.{id}.feedback"
+   }
+  },
+  "FeedbackApitopicsidfeedbackGETApiPermissionTestFeedbackAppStackFeedbackApiD7C6D35EGETtopicsidfeedbackFD7E9C22": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "ListFeedbackByTopicFunctionACFCF991",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "FeedbackApi4ED3D87F"
+       },
+       "/test-invoke-stage/GET/topics/*/feedback"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/topics/{id}/feedback/GET/ApiPermission.Test.FeedbackAppStackFeedbackApiD7C6D35E.GET..topics.{id}.feedback"
+   }
+  },
+  "FeedbackApitopicsidfeedbackGET918FC9C3": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "AuthorizationType": "NONE",
+    "HttpMethod": "GET",
+    "Integration": {
+     "IntegrationHttpMethod": "POST",
+     "Type": "AWS_PROXY",
+     "Uri": {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":apigateway:",
+        {
+         "Ref": "AWS::Region"
+        },
+        ":lambda:path/2015-03-31/functions/",
+        {
+         "Fn::GetAtt": [
+          "ListFeedbackByTopicFunctionACFCF991",
+          "Arn"
+         ]
+        },
+        "/invocations"
+       ]
+      ]
+     }
+    },
+    "ResourceId": {
+     "Ref": "FeedbackApitopicsidfeedback158C710E"
+    },
+    "RestApiId": {
+     "Ref": "FeedbackApi4ED3D87F"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/topics/{id}/feedback/GET/Resource"
+   }
+  },
+  "FeedbackApitopicsidsentiment3B22EB86": {
+   "Type": "AWS::ApiGateway::Resource",
+   "Properties": {
+    "ParentId": {
+     "Ref": "FeedbackApitopicsid7A1A74CE"
+    },
+    "PathPart": "sentiment",
+    "RestApiId": {
+     "Ref": "FeedbackApi4ED3D87F"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/topics/{id}/sentiment/Resource"
+   }
+  },
+  "FeedbackApitopicsidsentimentOPTIONS1D5A3A3A": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "ApiKeyRequired": false,
+    "AuthorizationType": "NONE",
+    "HttpMethod": "OPTIONS",
+    "Integration": {
+     "IntegrationResponses": [
+      {
+       "ResponseParameters": {
+        "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'",
+        "method.response.header.Access-Control-Allow-Origin": "'*'",
+        "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'"
+       },
+       "StatusCode": "204"
+      }
+     ],
+     "RequestTemplates": {
+      "application/json": "{ statusCode: 200 }"
+     },
+     "Type": "MOCK"
+    },
+    "MethodResponses": [
+     {
+      "ResponseParameters": {
+       "method.response.header.Access-Control-Allow-Headers": true,
+       "method.response.header.Access-Control-Allow-Origin": true,
+       "method.response.header.Access-Control-Allow-Methods": true
+      },
+      "StatusCode": "204"
+     }
+    ],
+    "ResourceId": {
+     "Ref": "FeedbackApitopicsidsentiment3B22EB86"
+    },
+    "RestApiId": {
+     "Ref": "FeedbackApi4ED3D87F"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/topics/{id}/sentiment/OPTIONS/Resource"
+   }
+  },
+  "FeedbackApitopicsidsentimentGETApiPermissionFeedbackAppStackFeedbackApiD7C6D35EGETtopicsidsentimentCFE46FCF": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "GetSentimentHistoryFunction2926CBA3",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "FeedbackApi4ED3D87F"
+       },
+       "/",
+       {
+        "Ref": "FeedbackApiDeploymentStageprod1EBA903B"
+       },
+       "/GET/topics/*/sentiment"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/topics/{id}/sentiment/GET/ApiPermission.FeedbackAppStackFeedbackApiD7C6D35E.GET..topics.{id}.sentiment"
+   }
+  },
+  "FeedbackApitopicsidsentimentGETApiPermissionTestFeedbackAppStackFeedbackApiD7C6D35EGETtopicsidsentiment12837CFE": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "GetSentimentHistoryFunction2926CBA3",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "FeedbackApi4ED3D87F"
+       },
+       "/test-invoke-stage/GET/topics/*/sentiment"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/topics/{id}/sentiment/GET/ApiPermission.Test.FeedbackAppStackFeedbackApiD7C6D35E.GET..topics.{id}.sentiment"
+   }
+  },
+  "FeedbackApitopicsidsentimentGET51FDECC6": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "AuthorizationType": "NONE",
+    "HttpMethod": "GET",
+    "Integration": {
+     "IntegrationHttpMethod": "POST",
+     "Type": "AWS_PROXY",
+     "Uri": {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":apigateway:",
+        {
+         "Ref": "AWS::Region"
+        },
+        ":lambda:path/2015-03-31/functions/",
+        {
+         "Fn::GetAtt": [
+          "GetSentimentHistoryFunction2926CBA3",
+          "Arn"
+         ]
+        },
+        "/invocations"
+       ]
+      ]
+     }
+    },
+    "ResourceId": {
+     "Ref": "FeedbackApitopicsidsentiment3B22EB86"
+    },
+    "RestApiId": {
+     "Ref": "FeedbackApi4ED3D87F"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/topics/{id}/sentiment/GET/Resource"
+   }
+  },
+  "FeedbackApifeedback47EB76F2": {
+   "Type": "AWS::ApiGateway::Resource",
+   "Properties": {
+    "ParentId": {
+     "Fn::GetAtt": [
+      "FeedbackApi4ED3D87F",
+      "RootResourceId"
+     ]
+    },
+    "PathPart": "feedback",
+    "RestApiId": {
+     "Ref": "FeedbackApi4ED3D87F"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/feedback/Resource"
+   }
+  },
+  "FeedbackApifeedbackOPTIONSA8EB509E": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "ApiKeyRequired": false,
+    "AuthorizationType": "NONE",
+    "HttpMethod": "OPTIONS",
+    "Integration": {
+     "IntegrationResponses": [
+      {
+       "ResponseParameters": {
+        "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'",
+        "method.response.header.Access-Control-Allow-Origin": "'*'",
+        "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'"
+       },
+       "StatusCode": "204"
+      }
+     ],
+     "RequestTemplates": {
+      "application/json": "{ statusCode: 200 }"
+     },
+     "Type": "MOCK"
+    },
+    "MethodResponses": [
+     {
+      "ResponseParameters": {
+       "method.response.header.Access-Control-Allow-Headers": true,
+       "method.response.header.Access-Control-Allow-Origin": true,
+       "method.response.header.Access-Control-Allow-Methods": true
+      },
+      "StatusCode": "204"
+     }
+    ],
+    "ResourceId": {
+     "Ref": "FeedbackApifeedback47EB76F2"
+    },
+    "RestApiId": {
+     "Ref": "FeedbackApi4ED3D87F"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/feedback/OPTIONS/Resource"
+   }
+  },
+  "FeedbackApifeedbackPOSTApiPermissionFeedbackAppStackFeedbackApiD7C6D35EPOSTfeedbackED76FE36": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "ValidateCreateFeedbackFunctionBC7D1A81",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "FeedbackApi4ED3D87F"
+       },
+       "/",
+       {
+        "Ref": "FeedbackApiDeploymentStageprod1EBA903B"
+       },
+       "/POST/feedback"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/feedback/POST/ApiPermission.FeedbackAppStackFeedbackApiD7C6D35E.POST..feedback"
+   }
+  },
+  "FeedbackApifeedbackPOSTApiPermissionTestFeedbackAppStackFeedbackApiD7C6D35EPOSTfeedbackC98A6533": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "ValidateCreateFeedbackFunctionBC7D1A81",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "FeedbackApi4ED3D87F"
+       },
+       "/test-invoke-stage/POST/feedback"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/feedback/POST/ApiPermission.Test.FeedbackAppStackFeedbackApiD7C6D35E.POST..feedback"
+   }
+  },
+  "FeedbackApifeedbackPOST1A06052D": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "AuthorizationType": "NONE",
+    "HttpMethod": "POST",
+    "Integration": {
+     "IntegrationHttpMethod": "POST",
+     "Type": "AWS_PROXY",
+     "Uri": {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":apigateway:",
+        {
+         "Ref": "AWS::Region"
+        },
+        ":lambda:path/2015-03-31/functions/",
+        {
+         "Fn::GetAtt": [
+          "ValidateCreateFeedbackFunctionBC7D1A81",
+          "Arn"
+         ]
+        },
+        "/invocations"
+       ]
+      ]
+     }
+    },
+    "ResourceId": {
+     "Ref": "FeedbackApifeedback47EB76F2"
+    },
+    "RestApiId": {
+     "Ref": "FeedbackApi4ED3D87F"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/feedback/POST/Resource"
+   }
+  },
+  "FeedbackApifeedbackidCA4CEC20": {
+   "Type": "AWS::ApiGateway::Resource",
+   "Properties": {
+    "ParentId": {
+     "Ref": "FeedbackApifeedback47EB76F2"
+    },
+    "PathPart": "{id}",
+    "RestApiId": {
+     "Ref": "FeedbackApi4ED3D87F"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/feedback/{id}/Resource"
+   }
+  },
+  "FeedbackApifeedbackidOPTIONS739E7B3A": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "ApiKeyRequired": false,
+    "AuthorizationType": "NONE",
+    "HttpMethod": "OPTIONS",
+    "Integration": {
+     "IntegrationResponses": [
+      {
+       "ResponseParameters": {
+        "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'",
+        "method.response.header.Access-Control-Allow-Origin": "'*'",
+        "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'"
+       },
+       "StatusCode": "204"
+      }
+     ],
+     "RequestTemplates": {
+      "application/json": "{ statusCode: 200 }"
+     },
+     "Type": "MOCK"
+    },
+    "MethodResponses": [
+     {
+      "ResponseParameters": {
+       "method.response.header.Access-Control-Allow-Headers": true,
+       "method.response.header.Access-Control-Allow-Origin": true,
+       "method.response.header.Access-Control-Allow-Methods": true
+      },
+      "StatusCode": "204"
+     }
+    ],
+    "ResourceId": {
+     "Ref": "FeedbackApifeedbackidCA4CEC20"
+    },
+    "RestApiId": {
+     "Ref": "FeedbackApi4ED3D87F"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/feedback/{id}/OPTIONS/Resource"
+   }
+  },
+  "FeedbackApifeedbackidGETApiPermissionFeedbackAppStackFeedbackApiD7C6D35EGETfeedbackid190844E7": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "GetFeedbackFunction37EA7D15",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "FeedbackApi4ED3D87F"
+       },
+       "/",
+       {
+        "Ref": "FeedbackApiDeploymentStageprod1EBA903B"
+       },
+       "/GET/feedback/*"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/feedback/{id}/GET/ApiPermission.FeedbackAppStackFeedbackApiD7C6D35E.GET..feedback.{id}"
+   }
+  },
+  "FeedbackApifeedbackidGETApiPermissionTestFeedbackAppStackFeedbackApiD7C6D35EGETfeedbackid5D4D50F8": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "GetFeedbackFunction37EA7D15",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "FeedbackApi4ED3D87F"
+       },
+       "/test-invoke-stage/GET/feedback/*"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/feedback/{id}/GET/ApiPermission.Test.FeedbackAppStackFeedbackApiD7C6D35E.GET..feedback.{id}"
+   }
+  },
+  "FeedbackApifeedbackidGET28CEA3B0": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "AuthorizationType": "NONE",
+    "HttpMethod": "GET",
+    "Integration": {
+     "IntegrationHttpMethod": "POST",
+     "Type": "AWS_PROXY",
+     "Uri": {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":apigateway:",
+        {
+         "Ref": "AWS::Region"
+        },
+        ":lambda:path/2015-03-31/functions/",
+        {
+         "Fn::GetAtt": [
+          "GetFeedbackFunction37EA7D15",
+          "Arn"
+         ]
+        },
+        "/invocations"
+       ]
+      ]
+     }
+    },
+    "ResourceId": {
+     "Ref": "FeedbackApifeedbackidCA4CEC20"
+    },
+    "RestApiId": {
+     "Ref": "FeedbackApi4ED3D87F"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/feedback/{id}/GET/Resource"
+   }
+  },
+  "FeedbackApifeedbackidDELETEApiPermissionFeedbackAppStackFeedbackApiD7C6D35EDELETEfeedbackid33C42088": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "ValidateDeleteFeedbackFunctionB2B24C37",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "FeedbackApi4ED3D87F"
+       },
+       "/",
+       {
+        "Ref": "FeedbackApiDeploymentStageprod1EBA903B"
+       },
+       "/DELETE/feedback/*"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/feedback/{id}/DELETE/ApiPermission.FeedbackAppStackFeedbackApiD7C6D35E.DELETE..feedback.{id}"
+   }
+  },
+  "FeedbackApifeedbackidDELETEApiPermissionTestFeedbackAppStackFeedbackApiD7C6D35EDELETEfeedbackid898DD0F2": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "ValidateDeleteFeedbackFunctionB2B24C37",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:",
+       {
+        "Ref": "AWS::Region"
+       },
+       ":",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "FeedbackApi4ED3D87F"
+       },
+       "/test-invoke-stage/DELETE/feedback/*"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/feedback/{id}/DELETE/ApiPermission.Test.FeedbackAppStackFeedbackApiD7C6D35E.DELETE..feedback.{id}"
+   }
+  },
+  "FeedbackApifeedbackidDELETEC5787B4A": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "AuthorizationType": "NONE",
+    "HttpMethod": "DELETE",
+    "Integration": {
+     "IntegrationHttpMethod": "POST",
+     "Type": "AWS_PROXY",
+     "Uri": {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":apigateway:",
+        {
+         "Ref": "AWS::Region"
+        },
+        ":lambda:path/2015-03-31/functions/",
+        {
+         "Fn::GetAtt": [
+          "ValidateDeleteFeedbackFunctionB2B24C37",
+          "Arn"
+         ]
+        },
+        "/invocations"
+       ]
+      ]
+     }
+    },
+    "ResourceId": {
+     "Ref": "FeedbackApifeedbackidCA4CEC20"
+    },
+    "RestApiId": {
+     "Ref": "FeedbackApi4ED3D87F"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/FeedbackApi/Default/feedback/{id}/DELETE/Resource"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/02OwW6DQAxEvyX3xU3IoeekVW9VEck9MoubOMAuwl5FaMW/VyyJymmex6Oxc8jzd9hu8CGZrZus5QriSdE2Bh9yifXosPN1BfGMVUvm49clmIw4gXj2PdtkJjiFSuzAvbJ3s7ueJ9NiV9UI8Ss4+0qsuaChY5GUZewgln65mLTwLdsx5RJNRvYXFCEVOMxiZA/HYBvSIwoZ7PmKSg8cIZYkeug5dT3xk/rWjx05nd3VdFK8pqsLlCQ+DJZS5zfpzdfz8kmv7bM58TT92+mxuYjddc78BO2DTqYY9ebd2x52Oey2m7swZ0Nwyh1BuegfWrHM4poBAAA="
+   },
+   "Metadata": {
+    "aws:cdk:path": "FeedbackAppStack/CDKMetadata/Default"
+   },
+   "Condition": "CDKMetadataAvailable"
+  }
+ },
+ "Outputs": {
+  "FeedbackApiEndpointEC0390E6": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "https://",
+      {
+       "Ref": "FeedbackApi4ED3D87F"
+      },
+      ".execute-api.",
+      {
+       "Ref": "AWS::Region"
+      },
+      ".",
+      {
+       "Ref": "AWS::URLSuffix"
+      },
+      "/",
+      {
+       "Ref": "FeedbackApiDeploymentStageprod1EBA903B"
+      },
+      "/"
+     ]
+    ]
+   }
+  }
+ },
+ "Conditions": {
+  "CDKMetadataAvailable": {
+   "Fn::Or": [
+    {
+     "Fn::Or": [
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "af-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-east-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-northeast-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-northeast-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-northeast-3"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-south-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-southeast-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-southeast-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-southeast-3"
+       ]
+      }
+     ]
+    },
+    {
+     "Fn::Or": [
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-southeast-4"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ca-central-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ca-west-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "cn-north-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "cn-northwest-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-central-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-central-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-north-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-south-2"
+       ]
+      }
+     ]
+    },
+    {
+     "Fn::Or": [
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-west-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-west-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-west-3"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "il-central-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "me-central-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "me-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "sa-east-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-east-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-east-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-west-1"
+       ]
+      }
+     ]
+    },
+    {
+     "Fn::Equals": [
+      {
+       "Ref": "AWS::Region"
+      },
+      "us-west-2"
+     ]
+    }
+   ]
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}

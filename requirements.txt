@@ -1,0 +1,4 @@
+boto3
+constructs
+aws-cdk-lib
+mypy-boto3-dynamodb

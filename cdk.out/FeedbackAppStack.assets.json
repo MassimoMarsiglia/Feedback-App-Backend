@@ -1,0 +1,34 @@
+{
+  "version": "48.0.0",
+  "files": {
+    "a6c4c3796035c9ded7187babaca4217ffded07ec7c09fe6e7d751ec1dec6ef6a": {
+      "displayName": "DeleteTopicFunction/Code",
+      "source": {
+        "path": "asset.a6c4c3796035c9ded7187babaca4217ffded07ec7c09fe6e7d751ec1dec6ef6a",
+        "packaging": "zip"
+      },
+      "destinations": {
+        "current_account-current_region-ffe428e3": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "a6c4c3796035c9ded7187babaca4217ffded07ec7c09fe6e7d751ec1dec6ef6a.zip",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    },
+    "1e4afbd3d4f70946bf145d20240b765b7b776342e607670691b36fcd1c28cc73": {
+      "displayName": "FeedbackAppStack Template",
+      "source": {
+        "path": "FeedbackAppStack.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "current_account-current_region-543045e4": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "1e4afbd3d4f70946bf145d20240b765b7b776342e607670691b36fcd1c28cc73.json",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}
